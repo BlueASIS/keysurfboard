@@ -11,7 +11,7 @@
 TFT_GC9D01N_Class TFT_099;
 
 #include <BleKeyboard.h>
-BleKeyboard bleKeyboard("T-Keyboard", "ESPRESSIF", 100);
+BleKeyboard bleKeyboard("🔑🏄", "Stonie", 69);
 
 byte rows[] = {0, 3, 18, 12, 11, 6, 7};
 const int rowCount = sizeof(rows) / sizeof(rows[0]);
@@ -31,7 +31,7 @@ char keyboard_symbol[colCount][rowCount];
 bool symbolSelected;
 int OffsetX = 0;
 uint16_t flow_i = 0;
-bool keyborad_BL_state = true;
+bool keyborad_BL_state = true; // true = off wtf!!!
 bool display_connected = true;  //The bluetooth connection is displayed on the screen
 bool case_locking = false;
 bool alt_active = false;
@@ -132,7 +132,7 @@ void setup()
     keyboard_symbol[4][5] = '.';
     keyboard_symbol[4][6] = '\'';
 
-    delay(500);
+    //delay(500);
     pinMode(keyborad_BL_PIN, OUTPUT);
     set_keyborad_BL(keyborad_BL_state);
 
@@ -155,27 +155,28 @@ void setup()
     TFT_099.backlight(50);
     TFT_099.DispColor(0, 0, TFT_WIDTH, TFT_HEIGHT, BLACK);
     TFT_099.DrawImage(0, 0, 40, 160, liligo_logo);
-    delay(2000);
+    //delay(2000);
 
     //Flow of the logo
-    while (millis() < 6000) {
-        for (int j = 0; j < 4; j++) {
-            TFT_099.DrawImage(0, (160 - (flow_i + j * 55)), 40, 40, liligo_logo1);
-        }
-        flow_i++;
-        if (flow_i == 55) {
-            flow_i = 0;
-        }
-    }
+    // while (millis() < 6000) {
+    //     for (int j = 0; j < 4; j++) {
+    //         TFT_099.DrawImage(0, (160 - (flow_i + j * 55)), 40, 40, liligo_logo1);
+    //     }
+    //     flow_i++;
+    //     if (flow_i == 55) {
+    //         flow_i = 0;
+    //     }
+    // }
 
-        TFT_099.DispColor(0, 0, TFT_WIDTH, TFT_HEIGHT, BLACK);
-    TFT_099.DispStr("version 1.0.0", 0, 2, WHITE, BLACK);
-    delay(3000);
+    //    TFT_099.DispColor(0, 0, TFT_WIDTH, TFT_HEIGHT, BLACK);
+    //TFT_099.DispStr("version 1.0.0", 0, 2, WHITE, BLACK);
+    //delay(3000);
 
-    TFT_099.DispColor(0, 0, TFT_WIDTH, TFT_HEIGHT, BLACK);
-    TFT_099.DispStr("Wait bluetooth ......", 0, 2, WHITE, BLACK);
+    //TFT_099.DispColor(0, 0, TFT_WIDTH, TFT_HEIGHT, BLACK);
+    //TFT_099.DispStr("Wait bluetooth ......", 0, 2, WHITE, BLACK);
 }
 
+bool bFirstConnected = false;
 
 void loop()
 {
@@ -187,14 +188,21 @@ void loop()
         clear_sccreen();
     }
 
-    if (keyPressed(2, 3)) {  //Right Shit  ,Toggle case locking
-        case_locking = !case_locking;
-    }
+    //if (keyPressed(2, 3)) {  //Right Shit  ,Toggle case locking
+    //    case_locking = !case_locking;
+    //}
 
     if (bleKeyboard.isConnected()) {
         if (millis() - previousMillis_1  > backlight_off_time) {//No keyboard for 20 seconds. Turn off the screen backlight
             TFT_099.backlight(0);
             previousMillis_1 = millis();;
+        }
+
+        if (!bFirstConnected)
+        {
+            keyborad_BL_state = false; // on!
+            set_keyborad_BL(keyborad_BL_state);
+            bFirstConnected = true;
         }
 
         if (display_connected) {
@@ -208,9 +216,18 @@ void loop()
 
         // key 3,3 is the enter key
         if (keyPressed(3, 3)) {
-            clear_sccreen();
-            Serial.println();
-            bleKeyboard.println();
+            // sym + enter = win
+            if (symbolSelected || keyPressed(0, 2))
+            {
+                bleKeyboard.press(KEY_LEFT_GUI);
+                symbolSelected = false;
+            }
+            else
+            {
+                clear_sccreen();
+                Serial.println();
+                bleKeyboard.println();
+            }
         }
         //BACKSPACE
         if (keyPressed(4, 3)) {
@@ -227,11 +244,20 @@ void loop()
         if (keyPressed(1, 6)) {
             bleKeyboard.press(KEY_RIGHT_SHIFT);
         }
-        //alt+left shit, trigger ctrl+shift(Switch the input method)
-        if (keyActive(0, 4) && keyPressed(1, 6)) {
-            bleKeyboard.press(KEY_RIGHT_CTRL);
-            bleKeyboard.press(KEY_RIGHT_SHIFT);
+        // remap r shift to esc
+        if (keyPressed(2, 3)) {
+            bleKeyboard.press(KEY_ESC);
         }
+        if (keyPressed(0, 6) && !symbolSelected) {
+            bleKeyboard.press(KEY_LEFT_CTRL);
+        }
+        if (keyPressed(0, 4))
+            bleKeyboard.press(KEY_LEFT_ALT);
+        //alt+left shit, trigger ctrl+shift(Switch the input method)
+        //if (keyActive(0, 4) && keyPressed(1, 6)) {
+        //    bleKeyboard.press(KEY_RIGHT_CTRL);
+        //    bleKeyboard.press(KEY_RIGHT_SHIFT);
+        //}
 
         bleKeyboard.releaseAll();
 
